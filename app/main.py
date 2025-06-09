@@ -1,36 +1,51 @@
 
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import JSONResponse
 from twilio.rest import Client
 import os
 
 app = FastAPI()
 
+# Initialiser le client Twilio avec les variables d'environnement
 twilio_sid = os.getenv("TWILIO_ACCOUNT_SID")
 twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
-twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
+twilio_from = os.getenv("TWILIO_PHONE_NUMBER")
 
 client = Client(twilio_sid, twilio_token)
 
 @app.post("/whatsapp-webhook")
-async def whatsapp_webhook(Body: str = Form(...), From: str = Form(...)):
+async def whatsapp_webhook(
+    request: Request,
+    From: str = Form(...),
+    Body: str = Form(...)
+):
     print(f"📥 Message reçu de {From} : {Body}")
 
-    try:
-        if Body.strip().lower() == "bonjour":
-            reply = "👋 Bienvenue chez Askley !\n1️⃣ Réserver un hôtel\n2️⃣ Réserver un restaurant\n3️⃣ Aide"
-        else:
-            reply = "✅ (Réponse simulée) Vous avez demandé : " + Body
-
-        print(f"📤 Réponse : {reply}")
-
-        client.messages.create(
-            body=reply,
-            from_=twilio_number,
-            to=From
+    # Logique de réponse simple
+    if "bonjour" in Body.lower():
+        response = (
+            "👋 Bienvenue chez Askley !\n"
+            "1️⃣ Réserver un hôtel\n"
+            "2️⃣ Réserver un restaurant\n"
+            "3️⃣ Aide"
         )
+    elif Body.strip() == "1":
+        response = "🏨 Super ! Envoyez-moi le nom de la ville et les dates pour réserver un hôtel."
+    elif Body.strip() == "2":
+        response = "🍽️ Très bien ! Envoyez-moi le type de cuisine ou le nom du restaurant."
+    else:
+        response = "🤖 Je n'ai pas compris. Envoyez 'Bonjour' pour démarrer."
 
-        return {"status": "envoyé"}
-
+    # Envoi de la réponse via Twilio
+    try:
+        client.messages.create(
+            from_=f"whatsapp:{twilio_from}",
+            to=From,
+            body=response
+        )
     except Exception as e:
-        print("❌ Erreur :", str(e))
-        return {"status": "erreur", "détail": str(e)}
+        print(f"❌ Erreur : {e}")
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=400)
+
+    print(f"📤 Réponse envoyée à {From} : {response}")
+    return {"status": "success"}
