@@ -5,16 +5,15 @@ from twilio.rest import Client
 
 app = FastAPI()
 
-# Lecture des variables d'environnement
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")  # Doit être comme: whatsapp:+14155238886
-
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 @app.post("/whatsapp-webhook")
 async def whatsapp_webhook(
-    request: Request,
+    request: Request,# Lecture des variables d'environnement
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_WHATSAPP_FROM")  # ✅ bon nom
+
     From: str = Form(...),
     Body: str = Form(...)
 ):
